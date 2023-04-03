@@ -39,6 +39,10 @@ class CaptureImageState extends State<CaptureImage> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
 
+  double zoom = 1.0;
+  double minZoom = 0.0;
+  double maxZoom = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +52,12 @@ class CaptureImageState extends State<CaptureImage> {
     );
 
     // initialize the controller
-    _initializeControllerFuture = _controller.initialize();
+    _initializeControllerFuture =
+        Future<void>(() => _controller.initialize().then((value) => {
+              _controller.getMinZoomLevel().then((value) => {minZoom = value}),
+              _controller.getMaxZoomLevel().then((value) => {maxZoom = value}),
+              _controller.setZoomLevel(zoom)
+            }));
   }
 
   @override
@@ -61,17 +70,42 @@ class CaptureImageState extends State<CaptureImage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Take a picture')),
+      appBar: AppBar(title: const Text('Autozoom Camera')),
       // show loading until camera is initialized
-      body: FutureBuilder<void>(
-        future: _initializeControllerFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            return CameraPreview(_controller);
-          } else {
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
+      body: Column(
+        children: [
+          FutureBuilder<void>(
+            future: _initializeControllerFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                return CameraPreview(_controller);
+              } else {
+                return const Center(child: CircularProgressIndicator());
+              }
+            },
+          ),
+          // zoom slider
+          FutureBuilder<void>(
+            future: _initializeControllerFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                return Slider(
+                  value: zoom,
+                  min: minZoom,
+                  max: maxZoom,
+                  onChanged: (value) {
+                    setState(() {
+                      zoom = value;
+                      _controller.setZoomLevel(zoom);
+                    });
+                  },
+                );
+              } else {
+                return const SizedBox();
+              }
+            },
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
