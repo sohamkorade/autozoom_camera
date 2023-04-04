@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 
 Future<void> main() async {
   // ensure camera is initialized
@@ -154,8 +155,19 @@ class ImagePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Image Preview')),
-      body: Image.file(File(imagePath)),
-    );
+        appBar: AppBar(title: const Text('Image Preview')),
+        body: Image.file(File(imagePath)),
+        // save button
+        floatingActionButton: FloatingActionButton(
+          child: const Icon(Icons.save),
+          onPressed: () {
+            // save image to gallery
+            final file = File(imagePath);
+            GallerySaver.saveImage(file.path).then((value) => {
+                  // close screen
+                  Navigator.of(context).pop()
+                });
+          },
+        ));
   }
 }
